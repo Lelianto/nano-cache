@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>nano-cache Browser Example</title>
+</head>
+<body>
+  <h1>nano-cache Browser Demo</h1>
+  <div id="output"></div>
+
+  <script type="module">
+    import { createCache, localStorageAdapter } from '../../src/index.ts';
+
+    const cache = createCache({
+      adapter: localStorageAdapter({ prefix: 'browser_demo:' }),
+      ttl: '1h'
+    });
+
+    async function init() {
+      await cache.set('theme', 'dark');
+      const theme = await cache.get('theme');
+      
+      document.getElementById('output').innerText = `Saved Theme: ${theme}`;
+    }
+
+    init();
+  </script>
+</body>
+</html>
