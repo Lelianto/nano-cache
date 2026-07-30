@@ -1,6 +1,6 @@
 {
   "name": "@antihero/nano-cache",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Universal, lightweight, zero-dependency TypeScript caching library with pluggable adapters.",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
@@ -16,7 +16,8 @@
         "types": "./dist/index.d.ts",
         "default": "./dist/index.js"
       }
-    }
+    },
+    "./package.json": "./package.json"
   },
   "publishConfig": {
     "access": "public"
