@@ -1,4 +1,4 @@
-import { createCache, memoryAdapter } from '@lelianto/nano-cache';
+import { createCache, memoryAdapter } from '@antihero/nano-cache';
 
 async function runNodeExample() {
   const cache = createCache({

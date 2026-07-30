@@ -2,11 +2,11 @@
   <h1 align="center">nano-cache</h1>
   <p align="center">Universal, lightweight, zero-dependency TypeScript caching library with pluggable adapters.</p>
   <p align="center">
-    <a href="https://www.npmjs.com/package/@lelianto/nano-cache"><img alt="npm" src="https://img.shields.io/npm/v/@lelianto/nano-cache?style=flat-square&color=6366f1" /></a>
+    <a href="https://www.npmjs.com/package/@antihero/nano-cache"><img alt="npm" src="https://img.shields.io/npm/v/@antihero/nano-cache?style=flat-square&color=6366f1" /></a>
     <a href="https://github.com/Lelianto/nano-cache/actions"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/Lelianto/nano-cache/ci.yml?style=flat-square&label=CI" /></a>
     <img alt="coverage" src="https://img.shields.io/badge/coverage-95%25-22c55e?style=flat-square" />
-    <img alt="license" src="https://img.shields.io/npm/l/@lelianto/nano-cache?style=flat-square" />
-    <img alt="size" src="https://img.shields.io/bundlephobia/minzip/@lelianto/nano-cache?style=flat-square" />
+    <img alt="license" src="https://img.shields.io/npm/l/@antihero/nano-cache?style=flat-square" />
+    <img alt="size" src="https://img.shields.io/bundlephobia/minzip/@antihero/nano-cache?style=flat-square" />
   </p>
 </p>
 
@@ -33,11 +33,11 @@
 ## Installation
 
 ```bash
-npm install @lelianto/nano-cache
+npm install @antihero/nano-cache
 # or
-pnpm add @lelianto/nano-cache
+pnpm add @antihero/nano-cache
 # or
-yarn add @lelianto/nano-cache
+yarn add @antihero/nano-cache
 ```
 
 ---
@@ -45,7 +45,7 @@ yarn add @lelianto/nano-cache
 ## Quick Start
 
 ```ts
-import { createCache, memoryAdapter } from '@lelianto/nano-cache';
+import { createCache, memoryAdapter } from '@antihero/nano-cache';
 
 const cache = createCache({
   adapter: memoryAdapter(),
@@ -208,7 +208,7 @@ const stats = await cache.stats();
 ### Memory (default)
 
 ```ts
-import { createCache, memoryAdapter } from '@lelianto/nano-cache';
+import { createCache, memoryAdapter } from '@antihero/nano-cache';
 
 const cache = createCache({
   adapter: memoryAdapter({ max: 1000 }), // LRU cap
@@ -219,7 +219,7 @@ const cache = createCache({
 ### LocalStorage
 
 ```ts
-import { createCache, localStorageAdapter } from '@lelianto/nano-cache';
+import { createCache, localStorageAdapter } from '@antihero/nano-cache';
 
 const cache = createCache({
   adapter: localStorageAdapter({ prefix: 'myapp:' }),
@@ -229,7 +229,7 @@ const cache = createCache({
 ### SessionStorage
 
 ```ts
-import { createCache, sessionStorageAdapter } from '@lelianto/nano-cache';
+import { createCache, sessionStorageAdapter } from '@antihero/nano-cache';
 
 const cache = createCache({
   adapter: sessionStorageAdapter(),
@@ -239,7 +239,7 @@ const cache = createCache({
 ### IndexedDB
 
 ```ts
-import { createCache, indexedDBAdapter } from '@lelianto/nano-cache';
+import { createCache, indexedDBAdapter } from '@antihero/nano-cache';
 
 const cache = createCache({
   adapter: indexedDBAdapter({ dbName: 'my-cache' }),
@@ -254,7 +254,7 @@ Works with **any Redis-compatible client** (`ioredis`, `@redis/client`, Upstash)
 
 ```ts
 import Redis from 'ioredis';
-import { createCache, redisAdapter } from '@lelianto/nano-cache';
+import { createCache, redisAdapter } from '@antihero/nano-cache';
 
 const client = new Redis();
 const cache = createCache({
@@ -266,7 +266,7 @@ const cache = createCache({
 ### Custom Adapter
 
 ```ts
-import { createAdapter, createCache } from '@lelianto/nano-cache';
+import { createAdapter, createCache } from '@antihero/nano-cache';
 
 const adapter = createAdapter({
   get: async (key) => myStorage.get(key),
@@ -286,7 +286,7 @@ const cache = createCache({ adapter });
 ### React
 
 ```tsx
-import { createCache, localStorageAdapter } from '@lelianto/nano-cache';
+import { createCache, localStorageAdapter } from '@antihero/nano-cache';
 import { useEffect, useState } from 'react';
 
 const cache = createCache({ adapter: localStorageAdapter(), ttl: '10m' });
@@ -306,7 +306,7 @@ export function useUsers() {
 
 ```ts
 // lib/cache.ts
-import { createCache, memoryAdapter } from '@lelianto/nano-cache';
+import { createCache, memoryAdapter } from '@antihero/nano-cache';
 
 export const serverCache = createCache({
   adapter: memoryAdapter({ max: 500 }),
@@ -327,7 +327,7 @@ export async function GET() {
 
 ```ts
 import express from 'express';
-import { createCache, memoryAdapter } from '@lelianto/nano-cache';
+import { createCache, memoryAdapter } from '@antihero/nano-cache';
 
 const cache = createCache({ ttl: '2m' });
 const app = express();
@@ -360,7 +360,7 @@ meta.ids instanceof Set        // ✅ true
 ### Custom Type Serializers
 
 ```ts
-import { defaultSerializer } from '@lelianto/nano-cache';
+import { defaultSerializer } from '@antihero/nano-cache';
 
 defaultSerializer.registerTransformer({
   name: 'Decimal',

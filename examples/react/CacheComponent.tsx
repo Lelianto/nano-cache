@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { createCache, sessionStorageAdapter } from '@lelianto/nano-cache';
+import { createCache, sessionStorageAdapter } from '@antihero/nano-cache';
 
 const cache = createCache({
   adapter: sessionStorageAdapter({ prefix: 'react_app:' }),
