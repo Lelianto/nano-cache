@@ -52,6 +52,7 @@
   ],
   "author": "Lelianto Pradana <lelianto.eko@gmail.com>",
   "license": "MIT",
+  "packageManager": "pnpm@10.33.2",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Lelianto/nano-cache.git"
