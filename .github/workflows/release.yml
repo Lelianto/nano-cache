@@ -20,7 +20,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
@@ -49,6 +49,6 @@ jobs:
         run: pnpm build
 
       - name: Publish to npm
-        run: npm publish --provenance
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          node -e 'const [a,b]=process.argv[1].split(".").map(Number); if (a<11 || (a===11 && b<5)) { console.error("npm "+process.argv[1]+" too old for trusted publishing (need >=11.5.1)"); process.exit(1); }' "$(npm --version)"
+          npm publish
