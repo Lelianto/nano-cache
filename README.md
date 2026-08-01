@@ -513,3 +513,29 @@ pnpm build
 ## License
 
 MIT
+
+---
+
+## 🚀 More TypeScript Projects
+
+If you find this package useful, you may also like these open-source projects.
+
+| Project | Description |
+|---------|-------------|
+| **💰 Monify** | Lightweight currency formatting library with multi-currency support. |
+| **🤖 AgentifAI** | Vendor-neutral AI agent event model and debugging toolkit. |
+| **⚡ Statelite** | Lightweight reactive state management for TypeScript. |
+| **🗄️ Nano Cache** | Universal cache abstraction for memory, Redis, IndexedDB, and more. |
+| **🔌 PlugnPlay** | Bootstrap cloud backends with minimal configuration. |
+| **🎨 Sagara UI** | Utility-first CSS framework optimized for AI-assisted development. |
+
+### Explore the ecosystem
+
+- 💰 Monify → https://github.com/Lelianto/monify
+- 🤖 AgentifAI → https://github.com/Lelianto/agentifai
+- ⚡ Statelite → https://github.com/Lelianto/statelite
+- 🗄️ Nano Cache → https://github.com/Lelianto/nano-cache
+- 🔌 PlugnPlay → https://github.com/Lelianto/plugnplay
+- 🎨 Sagara UI → https://github.com/Lelianto/sagaraui
+
+⭐ If you enjoy this project, consider giving it a star. It helps others discover the ecosystem.
