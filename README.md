@@ -349,6 +349,7 @@ Create a cache with `createCache(options)`, or `new NanoCache(options)`.
 | `ttl`       | `TTL`          | none               | Default expiry for every entry                     |
 | `namespace` | `string`       | none               | Prefix applied to all keys                         |
 | `max`       | `number`       | unlimited          | LRU capacity — only when `adapter` is **not** given |
+| `onError`   | `function`     | none               | Observe failures while operations remain non-throwing |
 
 ### Methods
 
@@ -382,8 +383,9 @@ Create a cache with `createCache(options)`, or `new NanoCache(options)`.
 | `createAdapter(config)`       | anywhere         | up to you    | Wrap any custom store                          |
 
 Shared options: `localStorageAdapter`, `sessionStorageAdapter`, and `redisAdapter` accept
-`{ prefix, serializer }`. `indexedDBAdapter` accepts `{ dbName, storeName, version }`.
-`memoryAdapter` accepts `{ max }`.
+`{ prefix, serializer }`. Redis also accepts `scanCount` and uses incremental `SCAN` when the client
+supports it, with `KEYS` retained only as a compatibility fallback. `indexedDBAdapter` accepts
+`{ dbName, storeName, version }`. `memoryAdapter` accepts `{ max }`.
 
 ## Events and stats
 
@@ -445,7 +447,14 @@ Behaviours that are easy to trip over. Each one is verified against the current 
 
 **Operations fail silently.** A failed `set` — Redis down, `localStorage` quota exceeded — does not
 throw; it is a no-op. A failed `get` returns `null`. This keeps a cache outage from taking down your
-app, but it also means you should never treat the cache as your source of truth.
+app, but it also means you should never treat the cache as your source of truth. Use `onError` for
+logging or monitoring without turning cache failures into application failures:
+
+```ts
+const cache = createCache({
+  onError: (error, { operation, key }) => logger.warn({ error, operation, key }),
+});
+```
 
 **You cannot cache `null`.** `get()` returns `null` for both "missing" and "stored `null`", so
 `set(key, null)` is indistinguishable from a miss, and `has()` reports `false`. As a result `fetch()`
@@ -460,8 +469,9 @@ throw — it is treated as "no TTL", so the entry never expires. Valid units are
 `createCache({ adapter: memoryAdapter(), max: 100 })` silently ignores `max`. Pass it to the adapter
 instead: `memoryAdapter({ max: 100 })`.
 
-**`serializer` on `createCache` does nothing.** It belongs to the adapter:
-`localStorageAdapter({ serializer })`, not `createCache({ serializer })`.
+**Serializers belong to string-based adapters.** Pass one to
+`localStorageAdapter({ serializer })`, `sessionStorageAdapter({ serializer })`, or
+`redisAdapter(client, { serializer })`.
 
 **`stats().memoryUsage` is process heap, not cache size.** It comes from `process.memoryUsage()` and
 reports your whole Node process; it is `0` in browsers. Use `size()` for the number of entries.

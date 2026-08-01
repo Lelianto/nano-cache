@@ -1,0 +1,1590 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Documentation for nano-cache, a universal zero-dependency TypeScript cache with pluggable adapters."
+    />
+    <meta name="theme-color" content="#f4f1e8" />
+    <title>nano-cache — TypeScript cache, minus the ceremony</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --paper: #f4f1e8;
+        --paper-raised: #fffdf7;
+        --ink: #181917;
+        --muted: #65675f;
+        --line: #c8c7bd;
+        --line-strong: #24251f;
+        --acid: #b7f135;
+        --acid-ink: #243500;
+        --coral: #ff6b4a;
+        --blue: #3979ff;
+        --code: #171916;
+        --code-ink: #eef2e6;
+        --code-muted: #9da594;
+        --header-height: 68px;
+        --sidebar-width: 236px;
+        --radius: 6px;
+      }
+
+      [data-theme='dark'] {
+        color-scheme: dark;
+        --paper: #171916;
+        --paper-raised: #20221e;
+        --ink: #f1f3e9;
+        --muted: #a6aa9e;
+        --line: #40433b;
+        --line-strong: #e4e8dc;
+        --acid: #b7f135;
+        --acid-ink: #1c2900;
+        --coral: #ff8065;
+        --blue: #75a0ff;
+        --code: #0e100d;
+        --code-ink: #eef2e6;
+        --code-muted: #969e8d;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+        scroll-padding-top: calc(var(--header-height) + 28px);
+      }
+
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font-family:
+          Inter,
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          'Segoe UI',
+          sans-serif;
+        line-height: 1.6;
+        letter-spacing: 0;
+      }
+
+      body::before {
+        position: fixed;
+        inset: 0;
+        z-index: -1;
+        content: '';
+        opacity: 0.22;
+        pointer-events: none;
+        background-image:
+          linear-gradient(var(--line) 1px, transparent 1px),
+          linear-gradient(90deg, var(--line) 1px, transparent 1px);
+        background-size: 32px 32px;
+      }
+
+      button,
+      a {
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      a {
+        color: inherit;
+      }
+
+      button {
+        font: inherit;
+      }
+
+      .skip-link {
+        position: fixed;
+        top: 8px;
+        left: 8px;
+        z-index: 100;
+        padding: 8px 12px;
+        background: var(--acid);
+        color: var(--acid-ink);
+        transform: translateY(-150%);
+      }
+
+      .skip-link:focus {
+        transform: translateY(0);
+      }
+
+      .site-header {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        height: var(--header-height);
+        border-bottom: 1px solid var(--line-strong);
+        background: color-mix(in srgb, var(--paper) 92%, transparent);
+        backdrop-filter: blur(12px);
+      }
+
+      .header-inner {
+        display: flex;
+        width: min(1440px, 100%);
+        height: 100%;
+        margin: 0 auto;
+        align-items: center;
+        padding: 0 28px;
+      }
+
+      .brand {
+        display: inline-flex;
+        min-width: var(--sidebar-width);
+        align-items: center;
+        gap: 10px;
+        text-decoration: none;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 15px;
+        font-weight: 800;
+      }
+
+      .brand-mark {
+        display: grid;
+        width: 27px;
+        height: 27px;
+        place-items: center;
+        border: 1px solid var(--line-strong);
+        background: var(--acid);
+        color: var(--acid-ink);
+        box-shadow: 3px 3px 0 var(--line-strong);
+      }
+
+      .version {
+        margin-left: 10px;
+        padding: 2px 7px;
+        border: 1px solid var(--line);
+        color: var(--muted);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 11px;
+      }
+
+      .header-actions {
+        display: flex;
+        margin-left: auto;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .icon-button,
+      .menu-button {
+        display: inline-grid;
+        width: 38px;
+        height: 38px;
+        place-items: center;
+        border: 1px solid transparent;
+        border-radius: var(--radius);
+        background: transparent;
+        color: var(--ink);
+        cursor: pointer;
+      }
+
+      .icon-button:hover,
+      .icon-button:focus-visible,
+      .menu-button:hover,
+      .menu-button:focus-visible {
+        border-color: var(--line);
+        background: var(--paper-raised);
+        outline: none;
+      }
+
+      .icon-button svg,
+      .menu-button svg,
+      .github-link svg {
+        width: 19px;
+        height: 19px;
+        fill: none;
+        stroke: currentColor;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        stroke-width: 1.8;
+      }
+
+      .github-link {
+        display: inline-flex;
+        height: 38px;
+        align-items: center;
+        gap: 8px;
+        padding: 0 12px;
+        border: 1px solid var(--line-strong);
+        border-radius: var(--radius);
+        background: var(--ink);
+        color: var(--paper);
+        text-decoration: none;
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      .github-link:hover {
+        background: var(--acid);
+        color: var(--acid-ink);
+      }
+
+      .menu-button {
+        display: none;
+      }
+
+      .page-shell {
+        display: grid;
+        width: min(1440px, 100%);
+        margin: 0 auto;
+        grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+        gap: 52px;
+        padding: 0 28px;
+      }
+
+      .sidebar {
+        position: sticky;
+        top: var(--header-height);
+        height: calc(100vh - var(--header-height));
+        padding: 36px 0;
+        overflow-y: auto;
+      }
+
+      .nav-label {
+        margin: 0 0 10px;
+        color: var(--muted);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0;
+        text-transform: uppercase;
+      }
+
+      .docs-nav {
+        display: grid;
+        gap: 3px;
+        margin-bottom: 30px;
+      }
+
+      .docs-nav a {
+        padding: 7px 10px;
+        border-left: 2px solid transparent;
+        color: var(--muted);
+        text-decoration: none;
+        font-size: 14px;
+      }
+
+      .docs-nav a:hover,
+      .docs-nav a.active {
+        border-color: var(--acid);
+        background: color-mix(in srgb, var(--acid) 16%, transparent);
+        color: var(--ink);
+      }
+
+      .sidebar-note {
+        padding: 14px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: var(--paper-raised);
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .sidebar-note strong {
+        display: block;
+        margin-bottom: 3px;
+        color: var(--ink);
+      }
+
+      main {
+        min-width: 0;
+        padding-bottom: 84px;
+      }
+
+      .hero {
+        display: grid;
+        min-height: min(680px, calc(100vh - var(--header-height)));
+        grid-template-columns: minmax(0, 1.18fr) minmax(310px, 0.82fr);
+        align-items: center;
+        gap: 52px;
+        border-bottom: 1px solid var(--line-strong);
+        padding: 76px 0 64px;
+      }
+
+      .eyebrow {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 0 0 22px;
+        color: var(--muted);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+      }
+
+      .eyebrow::before {
+        width: 24px;
+        height: 3px;
+        background: var(--coral);
+        content: '';
+      }
+
+      h1,
+      h2,
+      h3,
+      p {
+        overflow-wrap: break-word;
+      }
+
+      h1 {
+        max-width: 760px;
+        margin: 0;
+        font-size: clamp(52px, 7vw, 100px);
+        line-height: 0.9;
+        letter-spacing: 0;
+      }
+
+      .hero-highlight {
+        position: relative;
+        display: inline-block;
+        z-index: 0;
+      }
+
+      .hero-highlight::after {
+        position: absolute;
+        right: -3px;
+        bottom: 4px;
+        left: -3px;
+        z-index: -1;
+        height: 20%;
+        background: var(--acid);
+        content: '';
+      }
+
+      .hero-copy {
+        max-width: 660px;
+        margin: 28px 0 30px;
+        color: var(--muted);
+        font-size: 18px;
+      }
+
+      .hero-actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .install-command {
+        display: flex;
+        min-width: min(100%, 390px);
+        height: 50px;
+        align-items: center;
+        border: 1px solid var(--line-strong);
+        border-radius: var(--radius);
+        background: var(--code);
+        color: var(--code-ink);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 13px;
+      }
+
+      .install-command code {
+        min-width: 0;
+        flex: 1;
+        padding: 0 14px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .copy-button {
+        display: inline-grid;
+        width: 44px;
+        height: 100%;
+        flex: 0 0 auto;
+        place-items: center;
+        border: 0;
+        border-left: 1px solid #41453d;
+        background: transparent;
+        color: var(--code-muted);
+        cursor: pointer;
+      }
+
+      .copy-button:hover,
+      .copy-button:focus-visible {
+        background: #292c26;
+        color: var(--acid);
+        outline: none;
+      }
+
+      .copy-button svg {
+        width: 17px;
+        height: 17px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.8;
+      }
+
+      .text-link {
+        display: inline-flex;
+        height: 50px;
+        align-items: center;
+        gap: 8px;
+        padding: 0 15px;
+        border-bottom: 2px solid var(--ink);
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 800;
+      }
+
+      .text-link:hover {
+        border-color: var(--coral);
+        color: var(--coral);
+      }
+
+      .hero-visual {
+        position: relative;
+        min-height: 410px;
+      }
+
+      .cache-map {
+        position: absolute;
+        inset: 20px 0 0 12px;
+        border: 1px solid var(--line-strong);
+        background: var(--paper-raised);
+        box-shadow: 12px 12px 0 color-mix(in srgb, var(--blue) 75%, var(--ink));
+      }
+
+      .map-header {
+        display: flex;
+        height: 44px;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 14px;
+        border-bottom: 1px solid var(--line-strong);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 11px;
+        font-weight: 700;
+      }
+
+      .status-dot {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        margin-right: 7px;
+        border-radius: 50%;
+        background: var(--acid);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--acid) 25%, transparent);
+      }
+
+      .map-flow {
+        display: grid;
+        gap: 11px;
+        padding: 24px;
+      }
+
+      .flow-row {
+        display: grid;
+        grid-template-columns: 34px minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 11px;
+        padding: 12px;
+        border: 1px solid var(--line);
+        background: var(--paper);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 11px;
+      }
+
+      .flow-icon {
+        display: grid;
+        width: 34px;
+        height: 34px;
+        place-items: center;
+        border: 1px solid var(--line-strong);
+        background: var(--ink);
+        color: var(--paper);
+        font-weight: 800;
+      }
+
+      .flow-name {
+        display: block;
+        color: var(--ink);
+        font-weight: 800;
+      }
+
+      .flow-detail {
+        color: var(--muted);
+      }
+
+      .flow-state {
+        padding: 3px 6px;
+        background: var(--acid);
+        color: var(--acid-ink);
+        font-size: 9px;
+        font-weight: 900;
+        text-transform: uppercase;
+      }
+
+      .flow-state.miss {
+        background: var(--coral);
+        color: #281008;
+      }
+
+      .map-result {
+        margin: 0 24px 24px;
+        padding: 13px;
+        border: 1px dashed var(--line-strong);
+        color: var(--muted);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 11px;
+      }
+
+      .map-result strong {
+        color: var(--ink);
+      }
+
+      .proof-strip {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        border-bottom: 1px solid var(--line-strong);
+      }
+
+      .proof-item {
+        min-width: 0;
+        padding: 25px 18px;
+        border-right: 1px solid var(--line);
+      }
+
+      .proof-item:last-child {
+        border-right: 0;
+      }
+
+      .proof-value {
+        display: block;
+        margin-bottom: 2px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 22px;
+        font-weight: 900;
+      }
+
+      .proof-label {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .doc-section {
+        display: grid;
+        grid-template-columns: minmax(150px, 0.34fr) minmax(0, 1fr);
+        gap: 50px;
+        padding: 84px 0;
+        border-bottom: 1px solid var(--line-strong);
+      }
+
+      .section-index {
+        position: sticky;
+        top: calc(var(--header-height) + 26px);
+        height: max-content;
+      }
+
+      .section-number {
+        display: block;
+        margin-bottom: 8px;
+        color: var(--coral);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 12px;
+        font-weight: 900;
+      }
+
+      .section-index h2 {
+        margin: 0;
+        font-size: 26px;
+        line-height: 1.1;
+      }
+
+      .section-content {
+        min-width: 0;
+      }
+
+      .lead {
+        max-width: 720px;
+        margin: 0 0 30px;
+        color: var(--muted);
+        font-size: 17px;
+      }
+
+      .code-block {
+        position: relative;
+        margin: 22px 0;
+        border: 1px solid var(--line-strong);
+        border-radius: var(--radius);
+        background: var(--code);
+        overflow: hidden;
+      }
+
+      .code-label {
+        display: flex;
+        height: 39px;
+        align-items: center;
+        padding: 0 14px;
+        border-bottom: 1px solid #3a3d36;
+        color: var(--code-muted);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 10px;
+        font-weight: 800;
+        text-transform: uppercase;
+      }
+
+      .code-block .copy-button {
+        position: absolute;
+        top: 0;
+        right: 0;
+        height: 39px;
+      }
+
+      pre {
+        margin: 0;
+        padding: 22px;
+        overflow-x: auto;
+        color: var(--code-ink);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 13px;
+        line-height: 1.75;
+        tab-size: 2;
+      }
+
+      .token-keyword,
+      .token-function {
+        color: #b7f135;
+      }
+
+      .token-string {
+        color: #ffad98;
+      }
+
+      .token-comment {
+        color: #7d8576;
+      }
+
+      .adapter-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        border-top: 1px solid var(--line-strong);
+        border-left: 1px solid var(--line-strong);
+      }
+
+      .adapter-item {
+        min-height: 150px;
+        padding: 22px;
+        border-right: 1px solid var(--line-strong);
+        border-bottom: 1px solid var(--line-strong);
+        background: var(--paper-raised);
+      }
+
+      .adapter-topline {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .adapter-item h3 {
+        margin: 0;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 15px;
+      }
+
+      .adapter-item p {
+        margin: 14px 0 0;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .adapter-tag {
+        flex: 0 0 auto;
+        padding: 3px 7px;
+        background: color-mix(in srgb, var(--blue) 17%, transparent);
+        color: var(--blue);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 9px;
+        font-weight: 900;
+        text-transform: uppercase;
+      }
+
+      .concept-list {
+        display: grid;
+        gap: 0;
+        border-top: 1px solid var(--line);
+      }
+
+      .concept-row {
+        display: grid;
+        grid-template-columns: 42px 150px minmax(0, 1fr);
+        gap: 20px;
+        padding: 24px 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .concept-number {
+        color: var(--coral);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 12px;
+        font-weight: 900;
+      }
+
+      .concept-row h3 {
+        margin: 0;
+        font-size: 16px;
+      }
+
+      .concept-row p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .api-table-wrap {
+        overflow-x: auto;
+        border: 1px solid var(--line-strong);
+        background: var(--paper-raised);
+      }
+
+      table {
+        width: 100%;
+        min-width: 620px;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+
+      th,
+      td {
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--line);
+        text-align: left;
+        vertical-align: top;
+      }
+
+      th {
+        background: var(--ink);
+        color: var(--paper);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 10px;
+        text-transform: uppercase;
+      }
+
+      tr:last-child td {
+        border-bottom: 0;
+      }
+
+      td:first-child {
+        color: var(--blue);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-weight: 700;
+        white-space: nowrap;
+      }
+
+      .callout {
+        display: grid;
+        grid-template-columns: 38px minmax(0, 1fr);
+        gap: 14px;
+        margin: 24px 0;
+        padding: 18px;
+        border: 1px solid var(--line-strong);
+        border-left: 6px solid var(--acid);
+        background: var(--paper-raised);
+      }
+
+      .callout-mark {
+        display: grid;
+        width: 32px;
+        height: 32px;
+        place-items: center;
+        background: var(--acid);
+        color: var(--acid-ink);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-weight: 900;
+      }
+
+      .callout strong {
+        display: block;
+        margin-bottom: 3px;
+      }
+
+      .callout p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+        padding: 38px 0 0;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .footer strong {
+        color: var(--ink);
+      }
+
+      .footer a:hover {
+        color: var(--blue);
+      }
+
+      .toast {
+        position: fixed;
+        right: 20px;
+        bottom: 20px;
+        z-index: 50;
+        padding: 10px 14px;
+        border: 1px solid var(--line-strong);
+        border-radius: var(--radius);
+        background: var(--ink);
+        color: var(--paper);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 12px;
+        transform: translateY(80px);
+        opacity: 0;
+        transition:
+          transform 180ms ease,
+          opacity 180ms ease;
+      }
+
+      .toast.visible {
+        transform: translateY(0);
+        opacity: 1;
+      }
+
+      @media (max-width: 1050px) {
+        .page-shell {
+          gap: 32px;
+        }
+
+        .hero {
+          grid-template-columns: 1fr;
+        }
+
+        .hero-visual {
+          min-height: 380px;
+          max-width: 620px;
+        }
+
+        .proof-strip {
+          grid-template-columns: repeat(2, 1fr);
+        }
+
+        .proof-item:nth-child(2) {
+          border-right: 0;
+        }
+
+        .proof-item:nth-child(-n + 2) {
+          border-bottom: 1px solid var(--line);
+        }
+
+        .doc-section {
+          grid-template-columns: 150px minmax(0, 1fr);
+          gap: 28px;
+        }
+      }
+
+      @media (max-width: 780px) {
+        :root {
+          --header-height: 60px;
+        }
+
+        .header-inner {
+          padding: 0 18px;
+        }
+
+        .brand {
+          min-width: 0;
+        }
+
+        .version,
+        .github-link span {
+          display: none;
+        }
+
+        .github-link {
+          width: 38px;
+          justify-content: center;
+          padding: 0;
+        }
+
+        .menu-button {
+          display: inline-grid;
+        }
+
+        .page-shell {
+          display: block;
+          padding: 0 18px;
+        }
+
+        .sidebar {
+          position: fixed;
+          top: var(--header-height);
+          right: 0;
+          bottom: 0;
+          left: 0;
+          z-index: 18;
+          height: auto;
+          padding: 24px 18px;
+          background: var(--paper);
+          transform: translateX(-100%);
+          transition: transform 200ms ease;
+        }
+
+        .sidebar.open {
+          transform: translateX(0);
+        }
+
+        .sidebar-note {
+          max-width: 420px;
+        }
+
+        .hero {
+          min-height: auto;
+          padding: 62px 0 56px;
+        }
+
+        h1 {
+          font-size: clamp(48px, 17vw, 76px);
+        }
+
+        .hero-copy {
+          font-size: 16px;
+        }
+
+        .hero-visual {
+          min-height: 355px;
+        }
+
+        .cache-map {
+          inset: 10px 10px 10px 0;
+          box-shadow: 8px 8px 0 color-mix(in srgb, var(--blue) 75%, var(--ink));
+        }
+
+        .doc-section {
+          display: block;
+          padding: 62px 0;
+        }
+
+        .section-index {
+          position: static;
+          margin-bottom: 26px;
+        }
+
+        .section-index h2 {
+          font-size: 28px;
+        }
+
+        .adapter-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .concept-row {
+          grid-template-columns: 34px minmax(0, 1fr);
+          gap: 12px;
+        }
+
+        .concept-row p {
+          grid-column: 2;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .header-actions {
+          gap: 3px;
+        }
+
+        .proof-strip {
+          grid-template-columns: 1fr 1fr;
+        }
+
+        .proof-item {
+          padding: 19px 12px;
+        }
+
+        .proof-value {
+          font-size: 18px;
+        }
+
+        .hero-actions,
+        .install-command {
+          width: 100%;
+        }
+
+        .text-link {
+          height: 42px;
+          padding-left: 0;
+        }
+
+        .map-flow {
+          padding: 16px;
+        }
+
+        .flow-row {
+          grid-template-columns: 30px minmax(0, 1fr);
+          padding: 9px;
+        }
+
+        .flow-icon {
+          width: 30px;
+          height: 30px;
+        }
+
+        .flow-state {
+          display: none;
+        }
+
+        .map-result {
+          margin: 0 16px 16px;
+        }
+
+        pre {
+          padding: 18px;
+          font-size: 12px;
+        }
+
+        .footer {
+          display: grid;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        html {
+          scroll-behavior: auto;
+        }
+
+        *,
+        *::before,
+        *::after {
+          transition-duration: 0.01ms !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to documentation</a>
+    <header class="site-header">
+      <div class="header-inner">
+        <button
+          class="menu-button"
+          id="menuButton"
+          aria-label="Open documentation menu"
+          aria-expanded="false"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
+        </button>
+        <a class="brand" href="#top" aria-label="nano-cache home">
+          <span class="brand-mark">n.</span>
+          <span>nano-cache</span>
+        </a>
+        <span class="version">v1.0.1</span>
+        <div class="header-actions">
+          <button
+            class="icon-button"
+            id="themeButton"
+            aria-label="Switch color theme"
+            title="Switch color theme"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+            </svg>
+          </button>
+          <a
+            class="github-link"
+            href="https://github.com/Lelianto/nano-cache"
+            aria-label="View nano-cache on GitHub"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3.3-.4 6.8-1.6 6.8-7A5.4 5.4 0 0 0 19.4 4 5 5 0 0 0 19.3.5S18.2.1 15 1.8a13.4 13.4 0 0 0-7 0C4.8.1 3.7.5 3.7.5A5 5 0 0 0 3.6 4a5.4 5.4 0 0 0-1.4 3.7c0 5.3 3.5 6.5 6.8 6.9A4.8 4.8 0 0 0 8 18v4"
+              />
+              <path d="M8 19c-3 .9-3-1.5-4-2" />
+            </svg>
+            <span>GitHub</span>
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <div class="page-shell" id="top">
+      <aside class="sidebar" id="sidebar" aria-label="Documentation navigation">
+        <p class="nav-label">Start here</p>
+        <nav class="docs-nav">
+          <a href="#overview" class="active">Overview</a>
+          <a href="#quick-start">Quick start</a>
+          <a href="#adapters">Adapters</a>
+          <a href="#concepts">Core concepts</a>
+          <a href="#api">API reference</a>
+          <a href="#errors">Error handling</a>
+        </nav>
+        <p class="nav-label">Project</p>
+        <nav class="docs-nav">
+          <a href="https://www.npmjs.com/package/@antihero/nano-cache">npm package</a>
+          <a href="https://github.com/Lelianto/nano-cache">Source code</a>
+          <a href="https://github.com/Lelianto/nano-cache/issues">Report an issue</a>
+        </nav>
+        <div class="sidebar-note">
+          <strong>Zero runtime dependencies</strong>
+          ESM, CommonJS, and TypeScript declarations are included.
+        </div>
+      </aside>
+
+      <main id="main">
+        <section class="hero" id="overview">
+          <div>
+            <p class="eyebrow">Universal TypeScript cache</p>
+            <h1>Cache less.<br /><span class="hero-highlight">Ship faster.</span></h1>
+            <p class="hero-copy">
+              One small API for memory, browser storage, IndexedDB, Redis, or your own backend.
+              Built for predictable caching without framework lock-in or runtime baggage.
+            </p>
+            <div class="hero-actions">
+              <div class="install-command">
+                <code>npm i @antihero/nano-cache</code>
+                <button
+                  class="copy-button"
+                  data-copy="npm i @antihero/nano-cache"
+                  aria-label="Copy install command"
+                  title="Copy install command"
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <rect x="9" y="9" width="11" height="11" rx="1" />
+                    <path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1" />
+                  </svg>
+                </button>
+              </div>
+              <a class="text-link" href="#quick-start"
+                >Read the docs <span aria-hidden="true">↓</span></a
+              >
+            </div>
+          </div>
+
+          <div
+            class="hero-visual"
+            aria-label="Diagram showing a cache request flowing through adapters"
+          >
+            <div class="cache-map">
+              <div class="map-header">
+                <span><span class="status-dot"></span>cache pipeline</span>
+                <span>12ms</span>
+              </div>
+              <div class="map-flow">
+                <div class="flow-row">
+                  <span class="flow-icon">01</span>
+                  <span
+                    ><span class="flow-name">cache.get(key)</span
+                    ><span class="flow-detail">lookup requested</span></span
+                  >
+                  <span class="flow-state miss">miss</span>
+                </div>
+                <div class="flow-row">
+                  <span class="flow-icon">02</span>
+                  <span
+                    ><span class="flow-name">fetch(loader)</span
+                    ><span class="flow-detail">deduplicated work</span></span
+                  >
+                  <span class="flow-state">once</span>
+                </div>
+                <div class="flow-row">
+                  <span class="flow-icon">03</span>
+                  <span
+                    ><span class="flow-name">adapter.set(value)</span
+                    ><span class="flow-detail">ttl · tags · namespace</span></span
+                  >
+                  <span class="flow-state">stored</span>
+                </div>
+              </div>
+              <div class="map-result">
+                <strong>next request → HIT</strong><br />loader skipped · value returned
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div class="proof-strip" aria-label="Project highlights">
+          <div class="proof-item">
+            <span class="proof-value">0</span><span class="proof-label">runtime dependencies</span>
+          </div>
+          <div class="proof-item">
+            <span class="proof-value">6</span><span class="proof-label">storage adapters</span>
+          </div>
+          <div class="proof-item">
+            <span class="proof-value">ESM+CJS</span
+            ><span class="proof-label">ready for modern and legacy Node</span>
+          </div>
+          <div class="proof-item">
+            <span class="proof-value">MIT</span><span class="proof-label">open source license</span>
+          </div>
+        </div>
+
+        <section class="doc-section" id="quick-start">
+          <div class="section-index">
+            <span class="section-number">01 / START</span>
+            <h2>Quick start</h2>
+          </div>
+          <div class="section-content">
+            <p class="lead">
+              Create a cache, store a value, and retrieve it. Every method is asynchronous, so
+              changing adapters later does not change your call sites.
+            </p>
+            <div class="code-block">
+              <div class="code-label">typescript</div>
+              <button
+                class="copy-button"
+                data-copy-target="quickCode"
+                aria-label="Copy quick start example"
+                title="Copy code"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <rect x="9" y="9" width="11" height="11" rx="1" />
+                  <path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1" />
+                </svg>
+              </button>
+              <pre
+                id="quickCode"
+              ><code><span class="token-keyword">import</span> { createCache, memoryAdapter } <span class="token-keyword">from</span> <span class="token-string">'@antihero/nano-cache'</span>;
+
+<span class="token-keyword">const</span> cache = <span class="token-function">createCache</span>({
+  adapter: <span class="token-function">memoryAdapter</span>({ max: 1_000 }),
+  ttl: <span class="token-string">'5m'</span>,
+});
+
+<span class="token-keyword">await</span> cache.set(<span class="token-string">'user:1'</span>, { name: <span class="token-string">'Ada'</span> });
+<span class="token-keyword">await</span> cache.get(<span class="token-string">'user:1'</span>); <span class="token-comment">// { name: 'Ada' }</span>
+<span class="token-keyword">await</span> cache.has(<span class="token-string">'user:1'</span>); <span class="token-comment">// true</span></code></pre>
+            </div>
+            <div class="callout">
+              <div class="callout-mark">i</div>
+              <div>
+                <strong>TTL accepts plain milliseconds or duration strings.</strong>
+                <p>
+                  Use values such as <code>3000</code>, <code>'500ms'</code>, <code>'10m'</code>,
+                  <code>'2h'</code>, or <code>'7d'</code>.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="adapters">
+          <div class="section-index">
+            <span class="section-number">02 / STORE</span>
+            <h2>Choose an adapter</h2>
+          </div>
+          <div class="section-content">
+            <p class="lead">
+              Your application code stays the same. Only the adapter decides where cached values
+              live and how long they persist.
+            </p>
+            <div class="adapter-grid">
+              <article class="adapter-item">
+                <div class="adapter-topline">
+                  <h3>memoryAdapter</h3>
+                  <span class="adapter-tag">universal</span>
+                </div>
+                <p>Fast in-process LRU cache for servers, scripts, tests, and short-lived data.</p>
+              </article>
+              <article class="adapter-item">
+                <div class="adapter-topline">
+                  <h3>localStorage</h3>
+                  <span class="adapter-tag">browser</span>
+                </div>
+                <p>
+                  Persistent browser cache with structured serialization and configurable prefixes.
+                </p>
+              </article>
+              <article class="adapter-item">
+                <div class="adapter-topline">
+                  <h3>sessionStorage</h3>
+                  <span class="adapter-tag">browser</span>
+                </div>
+                <p>Per-tab storage that disappears when the browser session ends.</p>
+              </article>
+              <article class="adapter-item">
+                <div class="adapter-topline">
+                  <h3>indexedDB</h3>
+                  <span class="adapter-tag">browser</span>
+                </div>
+                <p>Large-capacity browser persistence with an automatic memory fallback.</p>
+              </article>
+              <article class="adapter-item">
+                <div class="adapter-topline">
+                  <h3>redisAdapter</h3>
+                  <span class="adapter-tag">server</span>
+                </div>
+                <p>Shared cache across processes with native TTL and incremental key scanning.</p>
+              </article>
+              <article class="adapter-item">
+                <div class="adapter-topline">
+                  <h3>createAdapter</h3>
+                  <span class="adapter-tag">custom</span>
+                </div>
+                <p>
+                  Wrap a database, edge store, or internal cache behind the same compact contract.
+                </p>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="concepts">
+          <div class="section-index">
+            <span class="section-number">03 / MODEL</span>
+            <h2>Core concepts</h2>
+          </div>
+          <div class="section-content">
+            <p class="lead">
+              The useful parts are built in, but each one remains optional. Start small and add
+              structure only where your data needs it.
+            </p>
+            <div class="concept-list">
+              <div class="concept-row">
+                <span class="concept-number">01</span>
+                <h3>TTL</h3>
+                <p>
+                  Expiration is lazy. Stale entries are removed when read or when the adapter
+                  enumerates its keys, so no background interval is left running.
+                </p>
+              </div>
+              <div class="concept-row">
+                <span class="concept-number">02</span>
+                <h3>Namespaces</h3>
+                <p>
+                  Prefix related keys automatically, allowing independent caches to share one
+                  backend without collisions.
+                </p>
+              </div>
+              <div class="concept-row">
+                <span class="concept-number">03</span>
+                <h3>Tags</h3>
+                <p>
+                  Attach labels to cached entries and invalidate a related group without keeping
+                  track of every key yourself.
+                </p>
+              </div>
+              <div class="concept-row">
+                <span class="concept-number">04</span>
+                <h3>Fetch deduplication</h3>
+                <p>
+                  Concurrent misses for one key share a single loader promise, reducing cache
+                  stampedes against APIs and databases.
+                </p>
+              </div>
+            </div>
+            <div class="code-block">
+              <div class="code-label">fetch with stampede protection</div>
+              <button
+                class="copy-button"
+                data-copy-target="fetchCode"
+                aria-label="Copy fetch example"
+                title="Copy code"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <rect x="9" y="9" width="11" height="11" rx="1" />
+                  <path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1" />
+                </svg>
+              </button>
+              <pre
+                id="fetchCode"
+              ><code><span class="token-keyword">const</span> user = <span class="token-keyword">await</span> cache.fetch(
+  <span class="token-string">`user:${userId}`</span>,
+  () => database.users.find(userId),
+  { ttl: <span class="token-string">'15m'</span>, tags: [<span class="token-string">`user:${userId}`</span>] },
+);</code></pre>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="api">
+          <div class="section-index">
+            <span class="section-number">04 / API</span>
+            <h2>Reference</h2>
+          </div>
+          <div class="section-content">
+            <p class="lead">
+              A deliberately small surface area. All methods return promises, including operations
+              backed by synchronous storage.
+            </p>
+            <div class="api-table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Method</th>
+                    <th>Returns</th>
+                    <th>Purpose</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>set(key, value, options?)</td>
+                    <td>Promise&lt;void&gt;</td>
+                    <td>Store a value with optional TTL and tags.</td>
+                  </tr>
+                  <tr>
+                    <td>get(key)</td>
+                    <td>Promise&lt;T | null&gt;</td>
+                    <td>Read a value; returns null when missing or expired.</td>
+                  </tr>
+                  <tr>
+                    <td>fetch(key, loader, options?)</td>
+                    <td>Promise&lt;T&gt;</td>
+                    <td>Read through the cache with concurrent request deduplication.</td>
+                  </tr>
+                  <tr>
+                    <td>has(key)</td>
+                    <td>Promise&lt;boolean&gt;</td>
+                    <td>Check whether a non-expired entry exists.</td>
+                  </tr>
+                  <tr>
+                    <td>delete(key)</td>
+                    <td>Promise&lt;boolean&gt;</td>
+                    <td>Remove one entry and report whether it existed.</td>
+                  </tr>
+                  <tr>
+                    <td>invalidateTag(tag)</td>
+                    <td>Promise&lt;void&gt;</td>
+                    <td>Remove every cached entry carrying a tag.</td>
+                  </tr>
+                  <tr>
+                    <td>getMany / setMany / deleteMany</td>
+                    <td>Promise</td>
+                    <td>Perform common cache operations in batches.</td>
+                  </tr>
+                  <tr>
+                    <td>keys / size / stats</td>
+                    <td>Promise</td>
+                    <td>Inspect active entries and operation counters.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="errors">
+          <div class="section-index">
+            <span class="section-number">05 / SAFETY</span>
+            <h2>Error handling</h2>
+          </div>
+          <div class="section-content">
+            <p class="lead">
+              Cache outages should not become application outages. Operations remain non-throwing by
+              default, while <code>onError</code> gives your logging or monitoring stack full
+              visibility.
+            </p>
+            <div class="code-block">
+              <div class="code-label">observe failures</div>
+              <button
+                class="copy-button"
+                data-copy-target="errorCode"
+                aria-label="Copy error handling example"
+                title="Copy code"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <rect x="9" y="9" width="11" height="11" rx="1" />
+                  <path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1" />
+                </svg>
+              </button>
+              <pre
+                id="errorCode"
+              ><code><span class="token-keyword">const</span> cache = createCache({
+  adapter: redisAdapter(redis),
+  onError: (error, { operation, key }) => {
+    logger.warn({ error, operation, key });
+  },
+});</code></pre>
+            </div>
+            <div class="callout">
+              <div class="callout-mark">!</div>
+              <div>
+                <strong>A cache is not a source of truth.</strong>
+                <p>
+                  A failed write is a no-op and a failed read returns <code>null</code>. Keep
+                  authoritative data in your database or upstream service.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <footer class="footer">
+          <span><strong>nano-cache</strong> · built by Lelianto Pradana</span>
+          <span
+            ><a href="https://github.com/Lelianto/nano-cache/blob/main/LICENSE">MIT License</a> ·
+            <a href="#top">Back to top ↑</a></span
+          >
+        </footer>
+      </main>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite">Copied to clipboard</div>
+
+    <script>
+      const root = document.documentElement;
+      const themeButton = document.getElementById('themeButton');
+      const menuButton = document.getElementById('menuButton');
+      const sidebar = document.getElementById('sidebar');
+      const toast = document.getElementById('toast');
+      let toastTimer;
+
+      const savedTheme = localStorage.getItem('nano-cache-theme');
+      if (savedTheme) root.dataset.theme = savedTheme;
+
+      themeButton.addEventListener('click', () => {
+        const nextTheme = root.dataset.theme === 'dark' ? 'light' : 'dark';
+        root.dataset.theme = nextTheme;
+        localStorage.setItem('nano-cache-theme', nextTheme);
+      });
+
+      menuButton.addEventListener('click', () => {
+        const isOpen = sidebar.classList.toggle('open');
+        menuButton.setAttribute('aria-expanded', String(isOpen));
+        menuButton.setAttribute(
+          'aria-label',
+          isOpen ? 'Close documentation menu' : 'Open documentation menu',
+        );
+      });
+
+      sidebar.querySelectorAll('a').forEach((link) => {
+        link.addEventListener('click', () => {
+          sidebar.classList.remove('open');
+          menuButton.setAttribute('aria-expanded', 'false');
+        });
+      });
+
+      document.querySelectorAll('[data-copy], [data-copy-target]').forEach((button) => {
+        button.addEventListener('click', async () => {
+          const target =
+            button.dataset.copyTarget && document.getElementById(button.dataset.copyTarget);
+          const text = button.dataset.copy || target?.innerText || '';
+          try {
+            await navigator.clipboard.writeText(text);
+            toast.classList.add('visible');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => toast.classList.remove('visible'), 1600);
+          } catch {
+            toast.textContent = 'Copy unavailable';
+            toast.classList.add('visible');
+          }
+        });
+      });
+
+      const sections = Array.from(document.querySelectorAll('main section[id]'));
+      const navLinks = Array.from(document.querySelectorAll('.docs-nav a[href^="#"]'));
+      const observer = new IntersectionObserver(
+        (entries) => {
+          const visible = entries
+            .filter((entry) => entry.isIntersecting)
+            .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+          if (!visible) return;
+          navLinks.forEach((link) =>
+            link.classList.toggle('active', link.getAttribute('href') === `#${visible.target.id}`),
+          );
+        },
+        { rootMargin: '-20% 0px -65% 0px', threshold: [0, 0.2, 0.5] },
+      );
+      sections.forEach((section) => observer.observe(section));
+    </script>
+  </body>
+</html>

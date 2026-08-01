@@ -2,6 +2,8 @@ import { memoryAdapter } from './adapters/memory';
 import {
   CacheAdapter,
   CacheEventMap,
+  CacheErrorHandler,
+  CacheOperation,
   CacheItem,
   CacheOptions,
   CacheStats,
@@ -18,6 +20,7 @@ export class NanoCache {
   private adapter: CacheAdapter;
   private defaultTTL?: TTL;
   private namespace?: string;
+  private onError?: CacheErrorHandler;
   private emitter = new NanoEventEmitter();
   private inFlight = new Map<string, Promise<any>>();
 
@@ -32,7 +35,16 @@ export class NanoCache {
   constructor(options: CacheOptions = {}) {
     this.defaultTTL = options.ttl;
     this.namespace = options.namespace;
+    this.onError = options.onError;
     this.adapter = options.adapter || memoryAdapter({ max: options.max });
+  }
+
+  private reportError(error: unknown, operation: CacheOperation, key?: string): void {
+    try {
+      this.onError?.(error, { operation, key });
+    } catch {
+      // Error observers must never affect cache behavior.
+    }
   }
 
   private toRawKey(key: string): string {
@@ -52,7 +64,11 @@ export class NanoCache {
       const ttl = options?.ttl ?? this.defaultTTL;
       const ttlMs = parseTTL(ttl);
       const now = Date.now();
-      const expiresAt = ttlMs !== null ? now + ttlMs : null;
+      const candidateExpiresAt = ttlMs !== null ? now + ttlMs : null;
+      const expiresAt =
+        candidateExpiresAt !== null && Number.isSafeInteger(candidateExpiresAt)
+          ? candidateExpiresAt
+          : null;
 
       const item: CacheItem<T> = {
         value,
@@ -64,8 +80,8 @@ export class NanoCache {
       await this.adapter.set(rawKey, item);
       this.statsCounters.sets++;
       this.emitter.emit('set', key, value, options);
-    } catch {
-      // Safe error handling to prevent application crashes
+    } catch (error) {
+      this.reportError(error, 'set', key);
     }
   }
 
@@ -93,8 +109,9 @@ export class NanoCache {
       this.statsCounters.hits++;
       this.emitter.emit('get', key, item.value);
       return item.value;
-    } catch {
+    } catch (error) {
       this.statsCounters.misses++;
+      this.reportError(error, 'get', key);
       return null;
     }
   }
@@ -103,12 +120,8 @@ export class NanoCache {
    * Check if a key exists in cache and is not expired.
    */
   public async has(key: string): Promise<boolean> {
-    try {
-      const val = await this.get(key);
-      return val !== null;
-    } catch {
-      return false;
-    }
+    const val = await this.get(key);
+    return val !== null;
   }
 
   /**
@@ -123,7 +136,8 @@ export class NanoCache {
         this.emitter.emit('delete', key);
       }
       return deleted;
-    } catch {
+    } catch (error) {
+      this.reportError(error, 'delete', key);
       return false;
     }
   }
@@ -135,8 +149,8 @@ export class NanoCache {
     try {
       await this.adapter.clear();
       this.emitter.emit('clear');
-    } catch {
-      // Safe error handling
+    } catch (error) {
+      this.reportError(error, 'clear');
     }
   }
 
@@ -155,7 +169,8 @@ export class NanoCache {
       }
 
       return userKeys;
-    } catch {
+    } catch (error) {
+      this.reportError(error, 'keys');
       return [];
     }
   }
@@ -189,8 +204,8 @@ export class NanoCache {
           }
         }
       }
-    } catch {
-      // Safe error handling
+    } catch (error) {
+      this.reportError(error, 'invalidateTag');
     }
   }
 

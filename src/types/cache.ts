@@ -1,7 +1,8 @@
 /**
  * Time-to-live representation: either milliseconds (e.g., 3000) or duration string (e.g., "10s", "5m", "1h", "1d").
  */
-export type TTL = number | `${number}ms` | `${number}s` | `${number}m` | `${number}h` | `${number}d`;
+export type TTL =
+  number | `${number}ms` | `${number}s` | `${number}m` | `${number}h` | `${number}d`;
 
 /**
  * Metadata wrapped with each cached entry.
@@ -63,10 +64,19 @@ export interface CacheOptions {
   max?: number;
 
   /**
-   * Custom serializer for non-JSON objects.
+   * Observe cache failures without changing the silent-failure behavior.
    */
-  serializer?: CacheSerializer;
+  onError?: CacheErrorHandler;
 }
+
+export type CacheOperation = 'set' | 'get' | 'delete' | 'clear' | 'keys' | 'invalidateTag';
+
+export interface CacheErrorContext {
+  operation: CacheOperation;
+  key?: string;
+}
+
+export type CacheErrorHandler = (error: unknown, context: CacheErrorContext) => void;
 
 /**
  * Real-time statistics summary of cache operations.
@@ -136,7 +146,9 @@ export interface CacheAdapter {
   /**
    * Batch get operation.
    */
-  getMany?<T = any>(keys: string[]): Promise<Record<string, CacheItem<T> | null>> | Record<string, CacheItem<T> | null>;
+  getMany?<T = any>(
+    keys: string[],
+  ): Promise<Record<string, CacheItem<T> | null>> | Record<string, CacheItem<T> | null>;
 
   /**
    * Batch set operation.

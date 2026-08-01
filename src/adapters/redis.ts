@@ -6,9 +6,8 @@ export interface RedisLikeClient {
   get(key: string): Promise<string | null | undefined>;
   set(key: string, value: string, ...args: any[]): Promise<any>;
   del(...keys: string[]): Promise<number | any>;
-  keys(pattern: string): Promise<string[]>;
-  flushdb?(): Promise<any>;
-  flushDb?(): Promise<any>;
+  keys?(pattern: string): Promise<string[]>;
+  scan?(cursor: string | number, ...args: any[]): Promise<any>;
 }
 
 export interface RedisAdapterOptions {
@@ -21,17 +20,25 @@ export interface RedisAdapterOptions {
    * Custom serializer. Defaults to built-in structured serializer.
    */
   serializer?: CacheSerializer;
+
+  /**
+   * Approximate number of keys requested per SCAN iteration. Defaults to 100.
+   */
+  scanCount?: number;
 }
 
 export class RedisAdapter implements CacheAdapter {
   private client: RedisLikeClient;
   private prefix: string;
   private serializer: CacheSerializer;
+  private scanCount: number;
 
   constructor(client: RedisLikeClient, options: RedisAdapterOptions = {}) {
     this.client = client;
     this.prefix = options.prefix ?? 'nano:';
     this.serializer = options.serializer ?? defaultSerializer;
+    this.scanCount =
+      options.scanCount && options.scanCount > 0 ? Math.floor(options.scanCount) : 100;
   }
 
   private getPrefixedKey(key: string): string {
@@ -39,83 +46,95 @@ export class RedisAdapter implements CacheAdapter {
   }
 
   private getRawKey(prefixedKey: string): string {
-    return prefixedKey.startsWith(this.prefix) ? prefixedKey.slice(this.prefix.length) : prefixedKey;
+    return prefixedKey.startsWith(this.prefix)
+      ? prefixedKey.slice(this.prefix.length)
+      : prefixedKey;
+  }
+
+  private async scanKeys(): Promise<string[]> {
+    const pattern = `${this.prefix}*`;
+
+    if (!this.client.scan) {
+      return this.client.keys ? this.client.keys(pattern) : [];
+    }
+
+    const keys: string[] = [];
+    let cursor = '0';
+
+    do {
+      let response: any;
+      try {
+        response = await this.client.scan(cursor, { MATCH: pattern, COUNT: this.scanCount });
+      } catch {
+        response = await this.client.scan(cursor, 'MATCH', pattern, 'COUNT', this.scanCount);
+      }
+
+      if (Array.isArray(response)) {
+        cursor = String(response[0]);
+        keys.push(...(response[1] || []));
+      } else {
+        cursor = String(response.cursor);
+        keys.push(...(response.keys || []));
+      }
+    } while (cursor !== '0');
+
+    return keys;
   }
 
   public async get<T = any>(key: string): Promise<CacheItem<T> | null> {
-    try {
-      const raw = await this.client.get(this.getPrefixedKey(key));
-      if (!raw) return null;
+    const raw = await this.client.get(this.getPrefixedKey(key));
+    if (!raw) return null;
 
-      const item = this.serializer.deserialize<CacheItem<T>>(raw);
-      if (!item) return null;
+    const item = this.serializer.deserialize<CacheItem<T>>(raw);
+    if (!item) return null;
 
-      if (isExpired(item.expiresAt)) {
-        await this.delete(key);
-        return null;
-      }
-
-      return item;
-    } catch {
+    if (isExpired(item.expiresAt)) {
+      await this.delete(key);
       return null;
     }
+
+    return item;
   }
 
   public async set<T = any>(key: string, item: CacheItem<T>): Promise<void> {
-    try {
-      const prefixedKey = this.getPrefixedKey(key);
-      const raw = this.serializer.serialize(item);
+    const prefixedKey = this.getPrefixedKey(key);
+    const raw = this.serializer.serialize(item);
 
-      if (item.expiresAt != null) {
-        const ttlMs = Math.max(1, item.expiresAt - Date.now());
-        // ioredis / node-redis set with 'PX' (milliseconds)
-        await this.client.set(prefixedKey, raw, 'PX', ttlMs);
-      } else {
-        await this.client.set(prefixedKey, raw);
-      }
-    } catch {
-      // Handle Redis failure safely
+    if (item.expiresAt != null) {
+      const ttlMs = Math.max(1, item.expiresAt - Date.now());
+      // ioredis / node-redis set with 'PX' (milliseconds)
+      await this.client.set(prefixedKey, raw, 'PX', ttlMs);
+    } else {
+      await this.client.set(prefixedKey, raw);
     }
   }
 
   public async delete(key: string): Promise<boolean> {
-    try {
-      const res = await this.client.del(this.getPrefixedKey(key));
-      return Boolean(res);
-    } catch {
-      return false;
-    }
+    const res = await this.client.del(this.getPrefixedKey(key));
+    return Boolean(res);
   }
 
   public async clear(): Promise<void> {
-    try {
-      const rawKeys = await this.client.keys(`${this.prefix}*`);
-      if (rawKeys && rawKeys.length > 0) {
-        await this.client.del(...rawKeys);
-      }
-    } catch {
-      // Safe fallback
+    const rawKeys = await this.scanKeys();
+    for (let i = 0; i < rawKeys.length; i += this.scanCount) {
+      await this.client.del(...rawKeys.slice(i, i + this.scanCount));
     }
   }
 
   public async keys(): Promise<string[]> {
-    try {
-      const rawKeys = (await this.client.keys(`${this.prefix}*`)) || [];
-      const result: string[] = [];
-      const now = Date.now();
+    const rawKeys = (await this.scanKeys()) || [];
+    const result: string[] = [];
+    const now = Date.now();
 
-      for (const k of rawKeys) {
-        const rawKey = this.getRawKey(k);
-        const item = await this.get(rawKey);
-        if (item && !isExpired(item.expiresAt, now)) {
-          result.push(rawKey);
-        }
+    for (const k of rawKeys) {
+      const rawKey = this.getRawKey(k);
+      const item = await this.get(rawKey);
+      if (item && !isExpired(item.expiresAt, now)) {
+        result.push(rawKey);
       }
-
-      return result;
-    } catch {
-      return [];
     }
+
+    return result;
   }
 
   public async has(key: string): Promise<boolean> {
@@ -136,7 +155,9 @@ export class RedisAdapter implements CacheAdapter {
     return result;
   }
 
-  public async setMany<T = any>(entries: Array<{ key: string; item: CacheItem<T> }>): Promise<void> {
+  public async setMany<T = any>(
+    entries: Array<{ key: string; item: CacheItem<T> }>,
+  ): Promise<void> {
     for (const { key, item } of entries) {
       await this.set(key, item);
     }

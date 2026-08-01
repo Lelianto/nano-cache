@@ -30,20 +30,29 @@ export function parseTTL(ttl?: TTL | null): number | null {
   const value = parseInt(match[1], 10);
   const unit = match[2] || 'ms';
 
+  let multiplier: number;
   switch (unit) {
     case 'ms':
-      return value;
+      multiplier = 1;
+      break;
     case 's':
-      return value * 1000;
+      multiplier = 1000;
+      break;
     case 'm':
-      return value * 60 * 1000;
+      multiplier = 60 * 1000;
+      break;
     case 'h':
-      return value * 3600 * 1000;
+      multiplier = 3600 * 1000;
+      break;
     case 'd':
-      return value * 86400 * 1000;
+      multiplier = 86400 * 1000;
+      break;
     default:
       return null;
   }
+
+  const result = value * multiplier;
+  return Number.isSafeInteger(result) && result > 0 ? result : null;
 }
 
 /**
